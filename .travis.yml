@@ -3,9 +3,28 @@ language: java
 jdk:
 - openjdk11
 before_install:
+- openssl aes-256-cbc -K $encrypted_6e13b841c7db_key -iv $encrypted_6e13b841c7db_iv
+  -in travis/codesigning.asc.enc -out travis/codesigning.asc -d
 - export COMMIT_SHORT=$(git rev-parse --short HEAD)
 script:
 - mvn clean install
+- |
+  set -e
+  if [ "$TRAVIS_BRANCH" = 'master' ] && [ "$TRAVIS_PULL_REQUEST" == 'false' ]; then
+     echo "Importing GPG key into keyring"
+     gpg --fast-import travis/codesigning.asc
+     CURRENT_VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
+     mvn versions:set -DnewVersion="$CURRENT_VERSION.$COMMIT_SHORT"
+
+     echo "Running release"
+     mvn --settings travis/settings.xml deploy -Prelease -DskipTests=true
+  fi
 notifications:
   slack:
     secure: HyoVlPknnL2zzvHCdNWb+hASyQkqZ6yBs8xcVQWp5dkFchsy4mEEy6yLaYv/KRjVUe6b31Wu/yRTQoyXOnQOjXSLV8WFoBKD0uXFKFUOctqI32kWBfQ31wraF1qy8IZCzE8JF0Db83rrWOijN5UQWD/fPSu9eD8v0eQzMK2IbcKmTeTT/JcsYkTpSPAuKcS5ESsURuAqt2xwG4KUeBgpNX1siv5i0ctTvH/3CJOaLg7uuxcry1YkpNppKKC65uvyUotpjHKmHP4cNyNshHVqJ4JHoJ0mSU4VrxQO6zqn+u7n7HgGwYOqkuOE3qw8JbK2KPVuTEdV7UzjydfgRIXX4yT0fB4D4wvAplfmzXp7mVWZRBaVVz5kSUoyp99djGsAl6TyZvdH0py/DVKMhTBfebJ6/OVR7xaoLqHtBUVKarEjhYvoHVV+jLQdrj63NcfGyv00KtKF7LbwBeFhXT3JJukTuKhpO4lP/GLi/f7LLtyY5WbTCYyExhvQZpks+E98mrYR4FwcTtVCRSHBg11MMJJckNgKkBD7B7Wkg1oILHw4GA+GXqDTF+BRdk7tCAfypTugdEA9rqGi5/1ObmhxzpwLGm8ztnExlWrW/deNNvAyuVsa5MTItH/Va+Eh2JoM7EouUpBpf1zQ8J8MRD9rdMw/1N8qQtm9/IuyaBkElmQ=
+env:
+  global:
+  - OSSRH_JIRA_USERNAME=navikt
+  - secure: VeFNSF8p5bc+DOapS0mLv4sXkKccrQCzxU+hUp16DLbB3LKC/B5q884MgY3FD+j8h6XHVDZyX9IsR56X8pDXvH+KfsqutbWwad+63z6oSordK67A25wFcDECqv17z1vickPWnD2ytuRUPz9cbhNYHYITL35kAddZ/cYY2XdQR2y85/cTQBYBJqCGdn32z1mB94gBs2PEyFpkN+28Mz5PxJwqQgdMZBKnXoJvOAa4a/8wKX8D/1aMW9w0gyeduNQNhWXoib0JMYqU5beYWyLdtlc1siM1mWraBPngc2PQdhJNSRurmHNelGCxe7Ng1PVxy6McwmC9M5meIZEJtPKLnGisGcH82DPAIVihMFds5Xj3vU4fSzF27zPkeQaRwuCvpeGPVJ1Ko23ZMfMicvp48v864Q8DxHWSa2RzsXqDtPXSO0e7gFh1p0LVQiwb//6Cpa+kfxCAOfAjbxlhFSuZ+GK5UYblfqqgzXmEyCRm5QWnBQEe7awSac2kEGolT9svwoL9SGrB9QzN2SHUWFhQGCF0wiDcvlUd5F/gYLDg1qyLl0eoQQBH3p81DVxhVYFQobYJwleCfimqVsp3YTb+ohuykSlhO9Wtsa0Bb/VajAtSvzesUjeFDdk0+p/i2PByzNumjxj1Yw8B5ebWiMUpoTfdngKjS/FcxzmRBDi8Y14=
+  - GPG_KEY_NAME=navikt
+  - secure: k35cOqH5veGesC8fXmApmuCAuqd4PWDXaZV24IvlqbD+F8q/oIe4DPyOI6Qu9kWTNgEMyomxQhIQTHrJiyvtiAsM1/JlKsQjrm4e7H0XPePiDF9uJbVrELyUC9fpuQcKKR2D9hlw3YElw88qvecMKCjNJOVU6bkJ3SwsJ4hhJvQKSSrS3fXOsC9xmc1SJ1MV/vseqH8F2CR09TGgpqPANkO0SCozRazHxAwdeWWQo10hnD8rYfmGK4KLObnpUdN3inh3SoJ0OWC9mn7EGfNbErUcx5S+vdfUTDUi0H3tb2RIcwZr4xe3zMmGEzJnvZ4mmZakoLE4Iexabvx489LjHTXchE4JdgjJFnhjI1sLf8vVGWsJGelgS02MBsicLgpDoVfICsWpDEMao1R487jgeP5Fnb/bgreEJQ9rq8Q3/NjSmQesUNnzpD3oEfaXJX9DAwatppexqPdpK4UyEi/P5Rsj/5mR3obThYEhARQMfRfjCLDlbztCE/FrSdPiseS370zl97pcmaf9H8mSjX3eD2MWyKm7OlIrVe+k4XhAg8muzKfoafiAuml0C+FLPpa9Qh/MKLN+9oCDvA+8slfTEP3eRPUqs9HP+OtBAU49+E1wo7P94otBovb9cr2m41j+A04/OKeHY7AFsdoPI7JGZU7WYblKkrc5XRLGSq0PNGQ=
