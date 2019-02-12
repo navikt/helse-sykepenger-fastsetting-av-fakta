@@ -36,8 +36,7 @@ class FastsettingAvFaktaTest {
         )
         val fastsattSykepengegrunnlag = fastsettingAvSykepengegrunnlagetIArbeidsgiverperioden(førsteSykdomsdag, inntekter)
 
-        println(fastsattSykepengegrunnlag.beregningsperiode)
-        assertEquals(17, fastsattSykepengegrunnlag.aktuellMånedsinntekt)
+        assertEquals(17, (fastsattSykepengegrunnlag as FastsattFaktum).faktum.aktuellMånedsinntekt)
     }
 
     @Test
@@ -49,6 +48,29 @@ class FastsettingAvFaktaTest {
         )
         val fastsattSykepengegrunnlag = fastsettingAvSykepengegrunnlagetIArbeidsgiverperioden(førsteSykdomsdag, inntekter)
 
-        assertEquals(11, fastsattSykepengegrunnlag.aktuellMånedsinntekt)
+        assertEquals(11, (fastsattSykepengegrunnlag as FastsattFaktum).faktum.aktuellMånedsinntekt)
+    }
+
+    @Test
+    fun `uavklart sykepengegrunnlag når det ikke er noen inntekter i beregningsperioden`() {
+        val førsteSykdomsdag = LocalDate.parse("2019-01-01")
+        val inntekter = emptyList<Inntekt>()
+        val fastsattSykepengegrunnlag = fastsettingAvSykepengegrunnlagetIArbeidsgiverperioden(førsteSykdomsdag, inntekter)
+
+        assertEquals(UavklartFaktum::class, fastsattSykepengegrunnlag::class)
+    }
+
+    @Test
+    fun `uavklart sykepengegrunnlag når det er flere enn tre inntekter i beregningsperioden`() {
+        val førsteSykdomsdag = LocalDate.parse("2019-01-01")
+        val inntekter = listOf(
+                Inntekt(LocalDate.parse("2018-12-01"), 1),
+                Inntekt(LocalDate.parse("2018-12-01"), 10),
+                Inntekt(LocalDate.parse("2018-11-01"), 21),
+                Inntekt(LocalDate.parse("2018-11-01"), 31)
+        )
+        val fastsattSykepengegrunnlag = fastsettingAvSykepengegrunnlagetIArbeidsgiverperioden(førsteSykdomsdag, inntekter)
+
+        assertEquals(UavklartFaktum::class, fastsattSykepengegrunnlag::class)
     }
 }

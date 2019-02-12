@@ -16,7 +16,7 @@ fun fastsettFakta(faktagrunnlag: Faktagrunnlag): FastsattFaktagrunnlag {
 }
 
 // https://lovdata.no/lov/1997-02-28-19/§8-28
-fun fastsettingAvSykepengegrunnlagetIArbeidsgiverperioden(førsteSykdomsdag: LocalDate, inntekter: List<Inntekt>): FastsattSykepengegrunnlag {
+fun fastsettingAvSykepengegrunnlagetIArbeidsgiverperioden(førsteSykdomsdag: LocalDate, inntekter: List<Inntekt>): Faktum<Sykepengegrunnlag> {
     val enMånedFør = førsteSykdomsdag.minusMonths(1)
             .yearMonth()
     val treMånederFør = førsteSykdomsdag.minusMonths(3)
@@ -30,21 +30,32 @@ fun fastsettingAvSykepengegrunnlagetIArbeidsgiverperioden(førsteSykdomsdag: Loc
 
     // TODO: sjekke om listen inneholder mer enn tre elementer? (hva om det er rapportert inn to inntekter for en måned?)
 
-    // § 8-28 andre ledd
-    val aktuellMånedsinntekt = beregningsperiode.sumBy { periode ->
-        periode.inntekt.beløp.toInt()
-    } / beregningsperiode.size
+    return if (beregningsperiode.isEmpty()) {
+        UavklartFaktum("Kan ikke avklare sykepengegrunnlaget fordi det ikke er inntekter i beregningsperioden")
+    } else if (beregningsperiode.size > 3) {
+        UavklartFaktum("Kan ikke avklare sykepengegrunnlaget fordi det er flere enn tre inntekter i beregningsperioden")
+    } else {
+        // § 8-28 andre ledd
+        val aktuellMånedsinntekt = beregningsperiode.sumBy { periode ->
+            periode.inntekt.beløp.toInt()
+        } / beregningsperiode.size
 
-    return FastsattSykepengegrunnlag(aktuellMånedsinntekt, beregningsperiode, "§ 8-28 andre ledd")
+        FastsattFaktum(Sykepengegrunnlag(aktuellMånedsinntekt, beregningsperiode), "§ 8-28 andre ledd")
+    }
 }
 
 // § 8-30 første ledd
-fun fastsettingAvSykepengegrunnlagetNårTrygdenYterSykepenger(førsteSykdomsdag: LocalDate, inntekter: List<Inntekt>): FastsattSykepengegrunnlag {
+fun fastsettingAvSykepengegrunnlagetNårTrygdenYterSykepenger(førsteSykdomsdag: LocalDate, inntekter: List<Inntekt>): Faktum<Sykepengegrunnlag> {
     val beregnetAktuellMånedsinntekt = fastsettingAvSykepengegrunnlagetIArbeidsgiverperioden(førsteSykdomsdag, inntekter)
-    val omregnetÅrsinntekt = beregnetAktuellMånedsinntekt.aktuellMånedsinntekt * 12
+    if (beregnetAktuellMånedsinntekt is UavklartFaktum) {
+        return beregnetAktuellMånedsinntekt
+    }
 
-    return FastsattSykepengegrunnlag(omregnetÅrsinntekt, beregnetAktuellMånedsinntekt.beregningsperiode, "§ 8-30 første ledd")
+    val omregnetÅrsinntekt = (beregnetAktuellMånedsinntekt as FastsattFaktum).faktum.aktuellMånedsinntekt * 12
+
+    return FastsattFaktum(Sykepengegrunnlag(omregnetÅrsinntekt, beregnetAktuellMånedsinntekt.faktum.beregningsperiode), "§ 8-30 første ledd")
 }
 
 data class FastsattBeregningsperiode(val inntekt: Inntekt, val begrunnelse: String)
-data class FastsattSykepengegrunnlag(val aktuellMånedsinntekt: Int, val beregningsperiode: List<FastsattBeregningsperiode>, val begrunnelse: String)
+
+data class Sykepengegrunnlag(val aktuellMånedsinntekt: Int, val beregningsperiode: List<FastsattBeregningsperiode>)
