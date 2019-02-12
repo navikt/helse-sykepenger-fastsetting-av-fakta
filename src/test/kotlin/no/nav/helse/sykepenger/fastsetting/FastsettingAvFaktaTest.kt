@@ -22,6 +22,30 @@ class FastsettingAvFaktaTest {
     }
 
     @Test
+    fun `alder er riktig når bursdag er i dag`() {
+        val iFjor = LocalDate.now().minusYears(1)
+        val fakta = fastsettingAvAlder(iFjor)
+
+        assertEquals(1, fakta.faktum)
+    }
+
+    @Test
+    fun `alder er riktig når bursdag var i går`() {
+        val iFjor = LocalDate.now().minusYears(1).minusDays(1)
+        val fakta = fastsettingAvAlder(iFjor)
+
+        assertEquals(1, fakta.faktum)
+    }
+
+    @Test
+    fun `alder er riktig når bursdag er i morgen`() {
+        val iFjor = LocalDate.now().minusYears(1).plusDays(1)
+        val fakta = fastsettingAvAlder(iFjor)
+
+        assertEquals(0, fakta.faktum)
+    }
+
+    @Test
     fun `gjennomsnittet av de tre siste kalendermånedene før arbeidsuførhet skal legges til grunn`() {
         val førsteSykdomsdag = LocalDate.parse("2019-01-01")
         val inntekter = listOf(

@@ -1,6 +1,7 @@
 package no.nav.helse.sykepenger.fastsetting
 
 import java.time.LocalDate
+import java.time.Year
 import java.time.YearMonth
 
 fun LocalDate.yearMonth() = YearMonth.of(year, month.value)
@@ -13,6 +14,12 @@ fun fastsettFakta(faktagrunnlag: Faktagrunnlag): FastsattFaktagrunnlag {
     val sykepengegrunnlagNårTrygdenYterSykepenger = fastsettingAvSykepengegrunnlagetNårTrygdenYterSykepenger(faktagrunnlag.førsteSykdomsdag, faktagrunnlag.inntekter)
 
     return FastsattFaktagrunnlag(faktagrunnlag, sykepengegrunnlagIArbeidsgiverperioden, sykepengegrunnlagNårTrygdenYterSykepenger)
+}
+
+fun fastsettingAvAlder(fødselsdato: LocalDate): FastsattFaktum<Int> {
+    val diff = Year.now().value - fødselsdato.year
+    val age = if (LocalDate.now().withYear(fødselsdato.year) >= fødselsdato) diff else diff - 1
+    return FastsattFaktum(age, "Per ${LocalDate.now()} er person født ${fødselsdato} ${age} år gammel")
 }
 
 // https://lovdata.no/lov/1997-02-28-19/§8-28
