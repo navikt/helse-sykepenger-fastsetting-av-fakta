@@ -27,6 +27,7 @@ class FastsettingAvFaktaTest {
         val fakta = fastsettingAvAlder(iFjor)
 
         assertEquals(1, fakta.faktum)
+        assertEquals("Per ${LocalDate.now()} er person født ${iFjor} 1 år gammel", fakta.begrunnelse)
     }
 
     @Test
@@ -82,6 +83,7 @@ class FastsettingAvFaktaTest {
         val fastsattSykepengegrunnlag = fastsettingAvSykepengegrunnlagetIArbeidsgiverperioden(førsteSykdomsdag, inntekter)
 
         assertEquals(UavklartFaktum::class, fastsattSykepengegrunnlag::class)
+        assertEquals("Kan ikke avklare sykepengegrunnlaget fordi det ikke er inntekter i beregningsperioden", (fastsattSykepengegrunnlag as UavklartFaktum).begrunnelse)
     }
 
     @Test
@@ -96,5 +98,6 @@ class FastsettingAvFaktaTest {
         val fastsattSykepengegrunnlag = fastsettingAvSykepengegrunnlagetIArbeidsgiverperioden(førsteSykdomsdag, inntekter)
 
         assertEquals(UavklartFaktum::class, fastsattSykepengegrunnlag::class)
+        assertEquals("Kan ikke avklare sykepengegrunnlaget fordi det er 4 inntekter i beregningsperioden, vi forventer tre eller færre.", (fastsattSykepengegrunnlag as UavklartFaktum).begrunnelse)
     }
 }

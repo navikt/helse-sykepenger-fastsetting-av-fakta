@@ -40,7 +40,7 @@ fun fastsettingAvSykepengegrunnlagetIArbeidsgiverperioden(førsteSykdomsdag: Loc
     return if (beregningsperiode.isEmpty()) {
         UavklartFaktum("Kan ikke avklare sykepengegrunnlaget fordi det ikke er inntekter i beregningsperioden")
     } else if (beregningsperiode.size > 3) {
-        UavklartFaktum("Kan ikke avklare sykepengegrunnlaget fordi det er flere enn tre inntekter i beregningsperioden")
+        UavklartFaktum("Kan ikke avklare sykepengegrunnlaget fordi det er ${beregningsperiode.size} inntekter i beregningsperioden, vi forventer tre eller færre.")
     } else {
         // § 8-28 andre ledd
         val aktuellMånedsinntekt = beregningsperiode.sumBy { periode ->
